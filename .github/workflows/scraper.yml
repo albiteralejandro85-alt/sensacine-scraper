@@ -1,0 +1,40 @@
+name: Actualizacion Automatizada Cartelera SensaCine
+
+on:
+  schedule:
+    - cron: '0 5 * * *'  # Ejecución automática diaria
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v3
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Instalar librerías
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 pandas
+
+      - name: Ejecutar script de extracción
+        run: python sensacine_scraper.py
+
+      - name: Guardar cambios en el repositorio
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add cartelera_sensacine.csv
+          git diff-index --quiet HEAD || git commit -m "Auto-update cartelera_sensacine.csv"
+          
+      - name: Hacer Push
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
